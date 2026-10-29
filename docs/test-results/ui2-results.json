@@ -1,0 +1,74 @@
+[
+  {
+    "id": "UI2-001",
+    "module": "报告",
+    "title": "导出 Markdown",
+    "expected": "生成 .md 文件",
+    "actual": "面镜复盘-周予安-2026-10-29.md",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "UI2-002",
+    "module": "设置",
+    "title": "保存模型配置",
+    "expected": "出现已连接提示",
+    "actual": "已连接 mock-interviewer：出题、追问、评分与复盘由模型完成，本地启发式评分作为兜底。",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "UI2-003",
+    "module": "设置",
+    "title": "测试连接成功",
+    "expected": "显示延迟与模型名",
+    "actual": "连接正常 · 2ms · mock-interviewer",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "UI2-004",
+    "module": "设置",
+    "title": "清除 Key 回到本地",
+    "expected": "显示本地规则引擎",
+    "actual": "本地规则引擎：用启发式规则完成出题、追问与五维评分。流程完整，但语义理解有限。",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "UI2-005",
+    "module": "知识库",
+    "title": "新增文档并检索",
+    "expected": "能检索到新文档",
+    "actual": "8",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "UI2-006",
+    "module": "知识库",
+    "title": "删除自定义文档",
+    "expected": "总数回到 16",
+    "actual": "16 → 16",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "UI2-007",
+    "module": "记录",
+    "title": "删除面试记录",
+    "expected": "行数 -1 / 接口 -1",
+    "actual": "12→11 / 12→11",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "UI2-008",
+    "module": "安全",
+    "title": "题库 XSS 转义",
+    "expected": "不执行 / 显示原始文本",
+    "actual": "fired=false html=&lt;img src=x onerror=window.__xss=1&gt;",
+    "ok": true,
+    "detail": ""
+  }
+]

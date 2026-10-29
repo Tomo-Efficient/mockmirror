@@ -1,0 +1,277 @@
+{
+  "results": [
+    {
+      "id": "UI-001",
+      "module": "工作台",
+      "title": "首页加载与导航",
+      "expected": "5 个导航项 / 标题可见 / 浅色背景",
+      "actual": "5 把每一次面试，提前演练一遍。 rgb(250, 250, 250)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "UI-002",
+      "module": "工作台",
+      "title": "首页统计与接口一致",
+      "expected": "已作答 4",
+      "actual": "80+/16 篇/3 种/4 次作答",
+      "ok": true,
+      "detail": "验证刷新后统计不陈旧"
+    },
+    {
+      "id": "UI-003",
+      "module": "路由",
+      "title": "未知页面 404 提示",
+      "expected": "页面出现 404",
+      "actual": "true",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "UI-004",
+      "module": "简历",
+      "title": "UI 上传 DOCX",
+      "expected": "显示石浩田 / 解析质量分",
+      "actual": "石浩田 96",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "UI-005",
+      "module": "简历",
+      "title": "使用示例简历",
+      "expected": "周予安 / 2 段经历",
+      "actual": "周予安",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "UI-006",
+      "module": "岗位",
+      "title": "JD 匹配展示",
+      "expected": "有匹配分与关键词",
+      "actual": "AI 产品经理 · 基本匹配 LLM RAG Prompt 评测 SQL AI 大模型 Agent 数据分析 B 端",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "UI-007",
+      "module": "设置",
+      "title": "人格与题量选择",
+      "expected": "直属经理 / 5 题",
+      "actual": "直属经理 5",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "UI-008",
+      "module": "面试",
+      "title": "进入面试",
+      "expected": "开场消息 / 1/5 / 当前问题",
+      "actual": "1 1/5 true",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "UI-009",
+      "module": "面试",
+      "title": "提交回答与流式回复",
+      "expected": "出现用户消息 / 右侧评分 / 进度前进",
+      "actual": "1 70 2/5",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "UI-010",
+      "module": "面试",
+      "title": "给点提示",
+      "expected": "出现提示气泡并展开参考要点",
+      "actual": "提示：可以从这几个角度展开——当时的业务问题与目标（投放分析平台）；你的关键判断：为什么选这个方案，放弃了什么；你个人负责的动作，以及和团队的边界",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "UI-011",
+      "module": "面试",
+      "title": "跳过当前题",
+      "expected": "进度前进 / 出现新问题",
+      "actual": "2/5 → 3/5",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "UI-012",
+      "module": "报告",
+      "title": "生成复盘报告",
+      "expected": "环形分数 / 五维 / 逐题列表",
+      "actual": "先跑完一场，再下结论 1",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "UI-013",
+      "module": "报告",
+      "title": "逐题复盘折叠",
+      "expected": "可收起再展开",
+      "actual": "1/0/1",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "UI-014",
+      "module": "报告",
+      "title": "低分题加入题库",
+      "expected": "按钮变为已加入",
+      "actual": "已加入题库",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "UI-015",
+      "module": "题库",
+      "title": "题库展示",
+      "expected": "至少 1 张卡片",
+      "actual": "1",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "UI-016",
+      "module": "题库",
+      "title": "标记已掌握",
+      "expected": "按钮 active",
+      "actual": "active",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "UI-017",
+      "module": "题库",
+      "title": "保存练习笔记",
+      "expected": "笔记出现在卡片",
+      "actual": "按 STAR-C 再练一遍按 STAR-C 再练一遍按 STAR-C 再练一遍",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "UI-018",
+      "module": "题库",
+      "title": "手动加题与去重",
+      "expected": "加 1 题后数量 +1，再加重不增加",
+      "actual": "1/2/2",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "UI-019",
+      "module": "知识库",
+      "title": "搜索 RAG 幻觉",
+      "expected": "至少 1 条结果",
+      "actual": "4",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "UI-020",
+      "module": "知识库",
+      "title": "打开文档弹窗",
+      "expected": "标题与正文可见",
+      "actual": "RAG 幻觉治理：先归因，再动手",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "UI-021",
+      "module": "记录",
+      "title": "记录列表",
+      "expected": "至少 1 条",
+      "actual": "7",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "UI-022",
+      "module": "记录",
+      "title": "已完成筛选",
+      "expected": "只显示已完成",
+      "actual": "5",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "UI-023",
+      "module": "设置",
+      "title": "本地模式提示",
+      "expected": "显示本地规则引擎",
+      "actual": "本地规则引擎：用启发式规则完成出题、追问与五维评分。流程完整，但语义理解有限。",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "UI-024",
+      "module": "设置",
+      "title": "无 Key 测试连接",
+      "expected": "显示请先填写提示",
+      "actual": "请先填写并保存 API Key，并开启模型",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "UI-025",
+      "module": "设置",
+      "title": "保存设置",
+      "expected": "出现保存成功提示",
+      "actual": "设置已保存",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "UI-026",
+      "module": "移动端",
+      "title": "侧栏菜单",
+      "expected": "菜单打开",
+      "actual": "sidebar open",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "UI-027",
+      "module": "移动端",
+      "title": "遮罩关闭菜单",
+      "expected": "菜单关闭",
+      "actual": "sidebar",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "UI-028",
+      "module": "移动端",
+      "title": "面试页无横向溢出",
+      "expected": "390",
+      "actual": "390",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "UI-029",
+      "module": "移动端",
+      "title": "快捷操作可见",
+      "expected": "提示/换题/结束",
+      "actual": "flex",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "UI-030",
+      "module": "面试",
+      "title": "刷新后恢复会话",
+      "expected": "仍有消息与当前问题",
+      "actual": "2 true",
+      "ok": true,
+      "detail": ""
+    }
+  ],
+  "errors": [
+    "Failed to load resource: the server responded with a status of 400 (Bad Request)"
+  ]
+}

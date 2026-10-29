@@ -1,0 +1,9 @@
+node_modules/
+data/*.json
+!data/demo.json
+data/uploads/
+.env
+.DS_Store
+*.log
+
+.dsh-office.*/

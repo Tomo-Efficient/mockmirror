@@ -1,0 +1,128 @@
+[
+  {
+    "id": "EDGE-001",
+    "module": "LLM",
+    "title": "保存模型配置",
+    "expected": "200 / enabled=true",
+    "actual": "200 true",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "EDGE-002",
+    "module": "LLM",
+    "title": "模型题单规划",
+    "expected": "plan.source=llm / 4 题",
+    "actual": "llm 4",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "EDGE-003",
+    "module": "LLM",
+    "title": "流式追问",
+    "expected": "包含 mock 文案",
+    "actual": "这个点我先记下。你提到用分流策略提升正确率，我想确认一下：当",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "EDGE-004",
+    "module": "LLM",
+    "title": "模型评估",
+    "expected": "mode=llm / 分项 80+",
+    "actual": "llm 86",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "EDGE-005",
+    "module": "LLM",
+    "title": "会话标记模型可用",
+    "expected": "llm=true",
+    "actual": "true",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "EDGE-006",
+    "module": "LLM",
+    "title": "模型复盘",
+    "expected": "mode=llm / 78 分",
+    "actual": "llm 78",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "EDGE-007",
+    "module": "降级",
+    "title": "模型不可用时仍能建场",
+    "expected": "200 / plan.source=local",
+    "actual": "local",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "EDGE-008",
+    "module": "降级",
+    "title": "流式回复降级本地",
+    "expected": "有内容 / 不白屏",
+    "actual": "true",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "EDGE-009",
+    "module": "降级",
+    "title": "评估降级本地并记录错误",
+    "expected": "mode=local / lastError 非空",
+    "actual": "local 无法连接到模型服务，请检查 Base U",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "EDGE-010",
+    "module": "降级",
+    "title": "复盘降级本地",
+    "expected": "mode=local",
+    "actual": "local",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "EDGE-011",
+    "module": "边界",
+    "title": "超大请求体",
+    "expected": "413",
+    "actual": "413",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "EDGE-012",
+    "module": "边界",
+    "title": "超长 JD 截断",
+    "expected": "200 且不报错",
+    "actual": "200",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "EDGE-013",
+    "module": "安全",
+    "title": "XSS 内容可存储但不执行",
+    "expected": "200 且原样返回",
+    "actual": "200",
+    "ok": "7ffc3925-9fe9-48c2-b866-576bf485e3ee",
+    "detail": ""
+  },
+  {
+    "id": "EDGE-014",
+    "module": "边界",
+    "title": "损坏 PDF 返回 400",
+    "expected": "400",
+    "actual": "400 Invalid PDF structure.",
+    "ok": true,
+    "detail": ""
+  }
+]

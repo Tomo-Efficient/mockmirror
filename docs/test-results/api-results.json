@@ -1,0 +1,497 @@
+[
+  {
+    "id": "API-001",
+    "module": "基础",
+    "title": "健康检查",
+    "expected": "200 且 ok=true",
+    "actual": "200 true",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-002",
+    "module": "基础",
+    "title": "Bootstrap 内容完整",
+    "expected": "3 人格 / 6 岗位 / 80 题 / 16 知识 / 7 节点",
+    "actual": "3/6/80/16/7",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-003",
+    "module": "基础",
+    "title": "未知接口 404",
+    "expected": "404",
+    "actual": "404",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-004",
+    "module": "简历",
+    "title": "示例文本解析",
+    "expected": "200 且识别姓名/经历/项目",
+    "actual": "200 周予安/2/2",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-005",
+    "module": "简历",
+    "title": "DOCX 真实简历解析",
+    "expected": "200 且识别 3 段经历 / 2 个项目",
+    "actual": "200 石浩田 3/2",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-006",
+    "module": "简历",
+    "title": "PDF 真实简历解析",
+    "expected": "200 且识别 3 段经历",
+    "actual": "200 石浩田 3",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-007",
+    "module": "简历",
+    "title": "旧版 .doc 提示换格式",
+    "expected": "400 且提示另存为 docx",
+    "actual": "400 暂不支持旧版 .doc，请另存为 .docx 后上传",
+    "ok": true,
+    "detail": "当前为 500，需统一参数错误状态码"
+  },
+  {
+    "id": "API-008",
+    "module": "简历",
+    "title": "过短文本拒绝",
+    "expected": "400",
+    "actual": "400 识别到的文字太少，请上传完整简历或直接粘贴文字",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-009",
+    "module": "简历",
+    "title": "纯文本解析",
+    "expected": "200",
+    "actual": "200",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-010",
+    "module": "简历",
+    "title": "伪造 PDF 拒绝",
+    "expected": "400/422",
+    "actual": "400 Invalid PDF structure.",
+    "ok": true,
+    "detail": "当前为 500"
+  },
+  {
+    "id": "API-011",
+    "module": "简历",
+    "title": "不支持格式拒绝",
+    "expected": "400",
+    "actual": "400 不支持的文件格式，请上传 PDF / DOCX / TXT / MD",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-012",
+    "module": "岗位",
+    "title": "JD 匹配分析",
+    "expected": "200 / AI 产品经理 / 0-100 分",
+    "actual": "200 AI 产品经理 72",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-013",
+    "module": "岗位",
+    "title": "过短 JD 拒绝",
+    "expected": "400",
+    "actual": "400",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-014",
+    "module": "岗位",
+    "title": "无简历分析 JD",
+    "expected": "404",
+    "actual": "404",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-015",
+    "module": "面试",
+    "title": "创建面试",
+    "expected": "200 / 6 题 / 开场消息 / trace",
+    "actual": "200 6 2 2",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-016",
+    "module": "面试",
+    "title": "无简历创建面试",
+    "expected": "404",
+    "actual": "404",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-017",
+    "module": "面试",
+    "title": "过短 JD 创建面试",
+    "expected": "400",
+    "actual": "400",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-018",
+    "module": "面试",
+    "title": "非法配置回退",
+    "expected": "200 / persona 合法 / rounds 12",
+    "actual": "200 senior 12",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-019",
+    "module": "面试",
+    "title": "作答 SSE 事件完整",
+    "expected": "meta/delta/evaluation/state/done 齐全",
+    "actual": "meta,delta,delta,delta,delta,delta,delta,delta,delta,delta,delta,delta,delta,delta,delta,delta,delta,delta,evaluation,state,done",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-020",
+    "module": "面试",
+    "title": "单题评分",
+    "expected": "总分 0-100 / 五维齐全 / 有风险或优点",
+    "actual": "76 {\"structure\":92,\"relevance\":68,\"depth\":73,\"impact\":74,\"fit\":75}",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-021",
+    "module": "面试",
+    "title": "下一题状态更新",
+    "expected": "progress 2/6 左右 / pending 存在",
+    "actual": "2/6 true",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-022",
+    "module": "面试",
+    "title": "空回答拒绝",
+    "expected": "SSE error 事件",
+    "actual": "error",
+    "ok": true,
+    "detail": "前端已限制空回答，接口层也应明确拒绝"
+  },
+  {
+    "id": "API-023",
+    "module": "面试",
+    "title": "提示接口",
+    "expected": "200 / 至少 1 条提示",
+    "actual": "200 3",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-024",
+    "module": "面试",
+    "title": "跳过当前题",
+    "expected": "200 / 下一条消息 / progress 前进",
+    "actual": "200 true 3",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-025",
+    "module": "报告",
+    "title": "生成报告",
+    "expected": "200 / readiness 0-100 / 五维 / 行动 >= 3",
+    "actual": "200 71 5 4",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-026",
+    "module": "报告",
+    "title": "重复生成报告幂等",
+    "expected": "200",
+    "actual": "200",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-027",
+    "module": "边界",
+    "title": "已完成会话再作答",
+    "expected": "SSE error 或 4xx",
+    "actual": "200 error",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-028",
+    "module": "边界",
+    "title": "已完成会话再跳过",
+    "expected": "400",
+    "actual": "400 本场面试已经结束",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-029",
+    "module": "报告",
+    "title": "零作答生成报告",
+    "expected": "200 / readiness 0 / 提示语",
+    "actual": "200 0 本场没有产生有效作答，建议重新开始一场完",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-030",
+    "module": "面试",
+    "title": "会话列表",
+    "expected": "200 且包含新建会话",
+    "actual": "200 3",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-031",
+    "module": "面试",
+    "title": "删除会话",
+    "expected": "200",
+    "actual": "200",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-032",
+    "module": "面试",
+    "title": "删除后查询 404",
+    "expected": "404",
+    "actual": "404",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-033",
+    "module": "题库",
+    "title": "新增题目",
+    "expected": "200 且返回 id",
+    "actual": "200 31938be8-a2f0-4384-ba68-10fcce55d154",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-034",
+    "module": "题库",
+    "title": "重复题目去重",
+    "expected": "1 条（返回已有）",
+    "actual": "200 true",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-035",
+    "module": "题库",
+    "title": "更新掌握度与笔记",
+    "expected": "200 且字段生效",
+    "actual": "200 mastered 用三层指标回答",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-036",
+    "module": "题库",
+    "title": "过短题目拒绝",
+    "expected": "400",
+    "actual": "400",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-037",
+    "module": "题库",
+    "title": "不存在题目更新",
+    "expected": "404",
+    "actual": "404",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-038",
+    "module": "题库",
+    "title": "删除题目",
+    "expected": "200",
+    "actual": "200",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-039",
+    "module": "知识库",
+    "title": "列表 16 篇",
+    "expected": "16",
+    "actual": "200 16",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-040",
+    "module": "知识库",
+    "title": "检索命中",
+    "expected": ">=1 条且含 snippet",
+    "actual": "200 4",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-041",
+    "module": "知识库",
+    "title": "文档详情",
+    "expected": "200 且含正文",
+    "actual": "200 1322",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-042",
+    "module": "知识库",
+    "title": "新增自定义文档",
+    "expected": "200 且 custom=true",
+    "actual": "200 true",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-043",
+    "module": "知识库",
+    "title": "新文档可被检索",
+    "expected": ">=1 条且包含新文档",
+    "actual": "200 true",
+    "ok": true,
+    "detail": "索引需要 invalidate"
+  },
+  {
+    "id": "API-044",
+    "module": "知识库",
+    "title": "删除自定义文档",
+    "expected": "200",
+    "actual": "200",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-045",
+    "module": "知识库",
+    "title": "内置文档不可删除",
+    "expected": "400",
+    "actual": "400 内置知识库不可删除",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-046",
+    "module": "设置",
+    "title": "默认本地模式",
+    "expected": "200 且 enabled=false",
+    "actual": "200 false",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-047",
+    "module": "设置",
+    "title": "非法 Base URL 拒绝",
+    "expected": "400",
+    "actual": "400",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-048",
+    "module": "设置",
+    "title": "保存 Key 掩码",
+    "expected": "200 / hasKey=true / keyHint 末四位",
+    "actual": "200 true ••••1234",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-049",
+    "module": "设置",
+    "title": "连通性测试（mock）",
+    "expected": "200 且 ok=true",
+    "actual": "200 true 14ms",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-050",
+    "module": "设置",
+    "title": "清除 Key",
+    "expected": "200 / hasKey=false",
+    "actual": "200 false",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-051",
+    "module": "设置",
+    "title": "无 Key 测试拒绝",
+    "expected": "400",
+    "actual": "400",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-052",
+    "module": "安全",
+    "title": "静态路径穿越",
+    "expected": "403/404",
+    "actual": "404",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-053",
+    "module": "安全",
+    "title": "错误 Content-Type",
+    "expected": "415",
+    "actual": "415",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-054",
+    "module": "安全",
+    "title": "非法 JSON",
+    "expected": "400",
+    "actual": "400",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "id": "API-055",
+    "module": "路由",
+    "title": "SPA 前端路由回退",
+    "expected": "200 text/html",
+    "actual": "200 text/html; charset=utf-8",
+    "ok": true,
+    "detail": ""
+  }
+]
