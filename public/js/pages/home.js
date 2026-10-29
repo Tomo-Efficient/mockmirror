@@ -24,7 +24,12 @@ function sessionRow(session) {
 
 export async function renderHome(params, root) {
   await refreshStats();
-  const { sessions } = await api('/api/sessions');
+  const [sessionsRes, kbRes] = await Promise.all([
+    api('/api/sessions'),
+    api('/api/kb').catch(() => ({ items: [] }))
+  ]);
+  const { sessions } = sessionsRes;
+  const kbItems = (kbRes.items || []).slice(0, 3);
   const active = sessions.find((s) => s.status !== 'finished');
   const lastDone = sessions.find((s) => s.status === 'finished');
   const stats = state.stats || {};
@@ -60,24 +65,57 @@ export async function renderHome(params, root) {
       ${hasSessions ? `<a class="btn btn-primary" href="/start" data-link>${icon('plus', 15)} 开始面试</a>` : ''}
     </div>
 
-    ${hasSessions ? `<div class="wb-kpis">
-      <span><strong>${sessions.length}</strong> 场记录</span>
-      <span><strong>${sessions.filter((s) => s.status !== 'finished').length}</strong> 进行中</span>
-      <span><strong>${stats.bank || 0}</strong> 道题库</span>
-    </div>` : ''}
+    <div class="wb-layout">
+      <div class="wb-main">
+        ${continueCard}
 
-    ${continueCard}
+        ${hasSessions ? `<div class="wb-section-head">
+          <h2>最近面试</h2>
+          <a class="text-link" href="/history" data-link>全部记录 ${icon('arrowRight', 13)}</a>
+        </div>
+        <div class="history-list">${sessions.slice(0, 5).map(sessionRow).join('')}</div>`
+        : `<div class="wb-empty card">
+          <h3>还没有面试记录</h3>
+          <div class="wb-steps">
+            <div><b>01</b><span>上传简历</span></div>
+            <div><b>02</b><span>粘贴目标 JD</span></div>
+            <div><b>03</b><span>选择面试官</span></div>
+          </div>
+        </div>`}
 
-    ${hasSessions ? `<div class="wb-section-head">
-      <h2>最近面试</h2>
-      <a class="text-link" href="/history" data-link>全部记录 ${icon('arrowRight', 13)}</a>
-    </div>
-    <div class="history-list">${sessions.slice(0, 5).map(sessionRow).join('')}</div>` : ''}
+        ${kbItems.length ? `<div class="wb-section-head wb-reading-head">
+          <h2>继续阅读</h2>
+          <a class="text-link" href="/knowledge" data-link>知识库 ${icon('arrowRight', 13)}</a>
+        </div>
+        <div class="wb-reading">
+          ${kbItems.map((d) => `<a class="wb-read" href="/knowledge" data-link>
+            <span class="wb-read-cat">${esc(d.category || '面经')}</span>
+            <strong>${esc(d.title)}</strong>
+            <small>${d.readingMinutes || 3} min</small>
+          </a>`).join('')}
+        </div>` : ''}
+      </div>
 
-    <div class="wb-links">
-      <a href="/bank" data-link>${icon('library', 14)} 个人题库 <span>${stats.bank || 0}</span></a>
-      <a href="/knowledge" data-link>${icon('book', 14)} 知识库 <span>${stats.kb || 16}</span></a>
-      <a href="/history" data-link>${icon('history', 14)} 面试记录 <span>${sessions.length}</span></a>
+      <aside class="wb-side">
+        <div class="wb-panel">
+          <div class="wb-panel-head">练习概览</div>
+          <div class="wb-overview">
+            <div><strong>${sessions.length}</strong><span>累计场次</span></div>
+            <div><strong>${stats.answered || 0}</strong><span>已作答</span></div>
+            <div><strong>${stats.bank || 0}</strong><span>个人题库</span></div>
+            <div><strong>${stats.kb || 16}</strong><span>知识库</span></div>
+          </div>
+        </div>
+        <div class="wb-panel">
+          <div class="wb-panel-head">快捷入口</div>
+          <div class="wb-nav">
+            <a href="/history" data-link>${icon('history', 14)} 面试记录 <span>${sessions.length}</span></a>
+            <a href="/bank" data-link>${icon('library', 14)} 个人题库 <span>${stats.bank || 0}</span></a>
+            <a href="/knowledge" data-link>${icon('book', 14)} 知识库 <span>${stats.kb || 16}</span></a>
+            <a href="/settings" data-link>${icon('settings', 14)} 设置</a>
+          </div>
+        </div>
+      </aside>
     </div>
   </div>`;
 }
