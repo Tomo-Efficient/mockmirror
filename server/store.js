@@ -154,6 +154,8 @@ function applyEnvLlm(target) {
   if (!target.settings.llm.apiKey && ENV_LLM.apiKey) {
     target.settings.llm.apiKey = ENV_LLM.apiKey;
     target.settings.llm.enabled = true;
+    target.settings.llm.baseUrl = ENV_LLM.baseUrl || target.settings.llm.baseUrl;
+    target.settings.llm.model = ENV_LLM.model || target.settings.llm.model;
   }
 }
 
@@ -170,8 +172,11 @@ function loadData() {
 }
 
 function payloadOf(state) {
+  const settings = { ...state.settings, llm: { ...state.settings.llm } };
+  // 站点共享 Key 只从环境变量读取，不复制进每个用户的 JSONB。
+  if (ENV_LLM.apiKey && settings.llm.apiKey === ENV_LLM.apiKey) settings.llm.apiKey = '';
   return {
-    settings: state.settings,
+    settings,
     bank: state.bank,
     sessions: state.sessions,
     resumes: state.resumes,
@@ -259,7 +264,7 @@ function createUserState(withEnvKey = false) {
   return state;
 }
 
-export async function initUserState(userId, { withEnvKey = false, legacy = false } = {}) {
+export async function initUserState(userId, { withEnvKey = true, legacy = false } = {}) {
   if (userStates.has(userId)) return userStates.get(userId);
   if (!db) throw new Error('数据库未配置');
   const rows = await db`SELECT data FROM mockmirror_user_state WHERE user_id = ${userId}`;
@@ -267,13 +272,17 @@ export async function initUserState(userId, { withEnvKey = false, legacy = false
   if (rows[0]?.data) {
     state = createUserState(false);
     applyData(state, typeof rows[0].data === 'string' ? JSON.parse(rows[0].data) : rows[0].data);
+    if (!state.settings.llm.apiKey) applyEnvLlm(state);
   } else {
     state = createUserState(withEnvKey);
     if (legacy) {
       try {
         const old = await db`SELECT data FROM mockmirror_state WHERE id = 1`;
         if (old[0]?.data) {
-          applyData(state, typeof old[0].data === 'string' ? JSON.parse(old[0].data) : old[0].data);
+          const legacyData = typeof old[0].data === 'string' ? JSON.parse(old[0].data) : old[0].data;
+          applyData(state, legacyData);
+          // 旧全局状态里的 Key 不迁移到用户数据；共享 Key 只来自服务端环境变量。
+          state.settings.llm.apiKey = '';
         }
       } catch { /* 旧表不存在时忽略 */ }
     }
@@ -314,6 +323,7 @@ export function publicSettings() {
       temperature: llm.temperature,
       enabled: Boolean(llm.enabled && llm.apiKey),
       hasKey: Boolean(llm.apiKey),
+      shared: Boolean(llm.apiKey && ENV_LLM.apiKey && llm.apiKey === ENV_LLM.apiKey),
       keyHint: llm.apiKey ? `••••${llm.apiKey.slice(-4)}` : ''
     },
     profile: store.settings.profile,
@@ -323,8 +333,16 @@ export function publicSettings() {
 
 export function updateSettings(patch = {}) {
   const s = store.settings;
+  const sharedKey = Boolean(s.llm.apiKey && ENV_LLM.apiKey && s.llm.apiKey === ENV_LLM.apiKey);
   if (patch.llm) {
     const next = { ...s.llm, ...patch.llm };
+    const enteringOwnKey = typeof patch.llm.apiKey === 'string' && patch.llm.apiKey.trim() !== '';
+    if (sharedKey && !enteringOwnKey) {
+      next.apiKey = ENV_LLM.apiKey;
+      next.baseUrl = ENV_LLM.baseUrl || next.baseUrl;
+      next.model = ENV_LLM.model || next.model;
+      next.enabled = true;
+    }
     if (patch.llm.apiKey === '' || patch.llm.apiKey == null) {
       if (patch.llm.apiKey === '') next.apiKey = '';
     }

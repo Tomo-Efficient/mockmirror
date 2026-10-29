@@ -90,7 +90,7 @@ export async function register({ email: rawEmail, name: rawName, password }) {
     if (err.code === '23505') throw new AuthError(409, '这个邮箱已经注册，请直接登录');
     throw err;
   }
-  await initUserState(id, { withEnvKey: first, legacy: first });
+  await initUserState(id, { withEnvKey: true, legacy: first });
   return { id, email, name };
 }
 

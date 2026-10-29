@@ -17,7 +17,7 @@ export function renderAuth() {
         <ul class="auth-points">
           <li><span>01</span>简历与 JD 只对当前账号可见</li>
           <li><span>02</span>面试记录、题库、复盘报告独立保存</li>
-          <li><span>03</span>模型 Key 与偏好设置按账号隔离</li>
+          <li><span>03</span>面试数据按账号隔离，模型由站点统一提供</li>
         </ul>
       </div>
       <div class="auth-story-foot">面镜 MockMirror · 个人项目 · 2026</div>

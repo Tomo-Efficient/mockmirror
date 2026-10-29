@@ -31,7 +31,7 @@ export async function renderSettings(params, root) {
             <div class="field"><label>Base URL</label><input class="input" id="baseUrl" value="${esc(llm.baseUrl || '')}" placeholder="https://api.deepseek.com/v1"></div>
             <div class="field"><label>模型名称</label><input class="input" id="model" value="${esc(llm.model || '')}" placeholder="deepseek-chat"></div>
           </div>
-          <div class="field" style="margin-top:14px"><label>API Key <span class="hint">${llm.hasKey ? `已保存 ${esc(llm.keyHint)}，留空则不修改` : '只保存在本机 data/store.json'}</span></label><div class="row" style="gap:8px"><input class="input" id="apiKey" type="password" placeholder="${llm.hasKey ? '••••••••（留空不修改）' : 'sk-...'}" autocomplete="off">${llm.hasKey ? '<button class="btn btn-ghost btn-sm" id="clearKey">清除</button>' : ''}</div></div>
+          <div class="field" style="margin-top:14px"><label>API Key <span class="hint">${llm.shared ? `当前使用站点共享 Key ${esc(llm.keyHint)}；填写自己的 Key 可覆盖` : llm.hasKey ? `已保存 ${esc(llm.keyHint)}，留空则不修改` : '未配置 Key'}</span></label><div class="row" style="gap:8px"><input class="input" id="apiKey" type="password" placeholder="${llm.hasKey ? '••••••••（留空不修改）' : 'sk-...'}" autocomplete="off">${llm.hasKey && !llm.shared ? '<button class="btn btn-ghost btn-sm" id="clearKey">清除</button>' : ''}</div></div>
           <div class="field" style="margin-top:14px"><label>Temperature <span class="hint" id="tempVal">${llm.temperature ?? 0.7}</span></label><input type="range" id="temp" min="0" max="1.2" step="0.1" value="${llm.temperature ?? 0.7}"></div>
           <div class="row" style="margin-top:18px">
             <button class="btn btn-primary" id="saveBtn">${icon('check', 15)} 保存设置</button>
@@ -42,7 +42,7 @@ export async function renderSettings(params, root) {
 
         <div class="panel">
           <div class="panel-title">数据与隐私</div>
-          <div class="panel-sub">所有简历、对话、报告都写在项目目录的 data/store.json 里，不上传云端。</div>
+          <div class="panel-sub">简历、对话、报告按账号保存在 Neon；本地无数据库时回退 data/store.json。</div>
           <div style="margin-top:16px">
             <div class="kv"><span>题库</span><strong>${stats.questions || 0} 道</strong></div>
             <div class="kv"><span>知识库</span><strong>${stats.kb || 0} 篇</strong></div>
