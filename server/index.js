@@ -6,7 +6,8 @@ import { PORT, HOST, PUBLIC_DIR, LIMITS, DATA_DIR } from './config.js';
 import {
   initStore, store, allKb, addResume, getResume,
   getSession, deleteSession, listSessions, stats, publicSettings, updateSettings,
-  addBankItem, updateBankItem, deleteBankItem, addCustomKb, deleteCustomKb, save
+  addBankItem, updateBankItem, deleteBankItem, addCustomKb, deleteCustomKb, save,
+  flushStore, storageMode
 } from './store.js';
 import { parseUpload } from './parsers/index.js';
 import { parseResume } from './profile.js';
@@ -16,7 +17,7 @@ import { testConnection, isLLMEnabled } from './llm.js';
 import { createSession, streamTurn, getHint, skipQuestion, finishSession, publicSession } from './agent/conversation.js';
 import { NODE_META } from './agent/graph.js';
 
-initStore();
+await initStore();
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -120,7 +121,7 @@ async function route(req, res, url) {
   const method = req.method;
 
   if (pathname === '/api/health') {
-    return json(res, 200, { ok: true, version: '1.0.0', llm: isLLMEnabled(), time: new Date().toISOString() });
+    return json(res, 200, { ok: true, version: '1.0.0', llm: isLLMEnabled(), storage: storageMode(), time: new Date().toISOString() });
   }
 
   if (pathname === '/api/bootstrap' && method === 'GET') {
@@ -353,6 +354,13 @@ server.on('error', (err) => {
   }
   throw err;
 });
+
+for (const signal of ['SIGTERM', 'SIGINT']) {
+  process.on(signal, async () => {
+    await flushStore();
+    process.exit(0);
+  });
+}
 
 server.listen(PORT, HOST, () => {
   console.log(`\n  面镜 MockMirror 已启动`);

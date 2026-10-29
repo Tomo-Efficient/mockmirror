@@ -24,13 +24,14 @@
 │  Content (启动时加载，只读)                                                │
 │    content/personas.json · roles.json · questions/*.json · kb/*.json     │
 │                                                                          │
-│  Runtime (data/store.json，原子写入)                                       │
+│  Runtime (Neon mockmirror_state / data/store.json)                        │
 │    resumes · sessions · bank · customKb · settings                       │
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
 - 启动时 `initStore()` 加载内容与用户数据；内容文件每次启动重新读取，便于改题库不改代码。
-- 写操作使用 `tmp → rename` 原子替换，避免进程中断写坏 JSON。
+- 配置 `DATABASE_URL` 时，动态状态写入 Neon `mockmirror_state`（单行 JSONB）；没有配置时回退到 `data/store.json`，写操作使用 `tmp → rename` 原子替换，避免进程中断写坏 JSON。
+- 每次写操作合并为当前状态快照，80ms 防抖后落库；`SIGTERM` 时会 flush。
 - 没有登录态：单用户本地工具，所有数据属于当前机器。
 
 ## 3. 请求生命周期
@@ -289,5 +290,5 @@ flowchart LR
 
 - 规则评分对同义表达不敏感，只能作为兜底，不应替代人工判断。
 - BM25 没有向量语义召回，行业新词可能漏检。
-- JSON 存储无并发锁；多标签页同时写会以后写覆盖先写。
+- 持久化层是单行 JSON 文档（文件或 Neon JSONB），没有按实体加锁；多实例并发写会以后写覆盖先写。
 - 语音输入依赖浏览器能力，不做录音存储。

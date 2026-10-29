@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { CONTENT_DIR, DATA_DIR, DATA_FILE, ENV_LLM } from './config.js';
+import { neon } from '@neondatabase/serverless';
+import { CONTENT_DIR, DATA_DIR, DATA_FILE, ENV_LLM, DATABASE_URL } from './config.js';
 
 const EMPTY = () => ({
   personas: [],
@@ -28,6 +29,10 @@ const EMPTY = () => ({
 });
 
 export const store = EMPTY();
+
+let sql = null;
+let storage = 'file';
+let writeChain = Promise.resolve();
 
 const readJson = (file, fallback) => {
   try {
@@ -134,32 +139,127 @@ function loadData() {
 }
 
 let saveTimer = null;
+
+function applyData(saved) {
+  if (!saved || typeof saved !== 'object') return;
+  if (saved.settings) {
+    store.settings = {
+      ...store.settings,
+      ...saved.settings,
+      llm: { ...store.settings.llm, ...(saved.settings.llm || {}) },
+      profile: { ...store.settings.profile, ...(saved.settings.profile || {}) },
+      preferences: { ...store.settings.preferences, ...(saved.settings.preferences || {}) }
+    };
+  }
+  if (Array.isArray(saved.bank)) store.bank = saved.bank;
+  if (Array.isArray(saved.sessions)) store.sessions = saved.sessions;
+  if (saved.resumes && typeof saved.resumes === 'object') store.resumes = saved.resumes;
+  if (Array.isArray(saved.customKb)) store.customKb = saved.customKb;
+}
+
+function applyEnvLlm() {
+  if (!store.settings.llm.apiKey && ENV_LLM.apiKey) {
+    store.settings.llm.apiKey = ENV_LLM.apiKey;
+    store.settings.llm.enabled = true;
+  }
+}
+
+function payload() {
+  return {
+    settings: store.settings,
+    bank: store.bank,
+    sessions: store.sessions,
+    resumes: store.resumes,
+    customKb: store.customKb
+  };
+}
+
+function writeFile(data) {
+  try {
+    fs.mkdirSync(DATA_DIR, { recursive: true, mode: 0o700 });
+    const tmp = `${DATA_FILE}.${process.pid}.tmp`;
+    fs.writeFileSync(tmp, JSON.stringify(data), { mode: 0o600 });
+    fs.renameSync(tmp, DATA_FILE);
+  } catch (err) {
+    console.error('[store] 保存失败', err);
+  }
+}
+
+async function persistState() {
+  const data = payload();
+  if (storage === 'neon' && sql) {
+    try {
+      const json = JSON.stringify(data);
+      await sql`INSERT INTO mockmirror_state (id, data, updated_at)
+                VALUES (1, ${json}::jsonb, now())
+                ON CONFLICT (id) DO UPDATE
+                SET data = EXCLUDED.data, updated_at = now()`;
+      return;
+    } catch (err) {
+      console.error('[store] Neon 保存失败，降级文件:', err.message);
+      storage = 'file';
+    }
+  }
+  writeFile(data);
+}
+
+function enqueuePersist() {
+  writeChain = writeChain.then(persistState, persistState);
+  return writeChain;
+}
+
 export function save() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
-    try {
-      fs.mkdirSync(DATA_DIR, { recursive: true, mode: 0o700 });
-      const payload = JSON.stringify({
-        settings: store.settings,
-        bank: store.bank,
-        sessions: store.sessions,
-        resumes: store.resumes,
-        customKb: store.customKb
-      });
-      const tmp = `${DATA_FILE}.${process.pid}.tmp`;
-      fs.writeFileSync(tmp, payload, { mode: 0o600 });
-      fs.renameSync(tmp, DATA_FILE);
-    } catch (err) {
-      console.error('[store] 保存失败', err);
-    }
+    saveTimer = null;
+    void enqueuePersist();
   }, 80);
   saveTimer.unref?.();
 }
 
-export function initStore() {
+export async function flushStore() {
+  if (saveTimer) {
+    clearTimeout(saveTimer);
+    saveTimer = null;
+  }
+  await enqueuePersist();
+}
+
+export async function initStore() {
   loadContent();
-  loadData();
+  if (DATABASE_URL) {
+    try {
+      sql = neon(DATABASE_URL);
+      await sql`CREATE TABLE IF NOT EXISTS mockmirror_state (
+        id smallint PRIMARY KEY,
+        data jsonb NOT NULL,
+        updated_at timestamptz NOT NULL DEFAULT now(),
+        CHECK (id = 1)
+      )`;
+      const rows = await sql`SELECT data FROM mockmirror_state WHERE id = 1`;
+      storage = 'neon';
+      if (rows[0]?.data) {
+        applyData(typeof rows[0].data === 'string' ? JSON.parse(rows[0].data) : rows[0].data);
+        console.log('[store] Neon 持久化已连接');
+      } else {
+        loadData();
+        await enqueuePersist();
+        console.log('[store] Neon 持久化已初始化');
+      }
+    } catch (err) {
+      console.warn(`[store] Neon 连接失败，降级文件: ${err.message}`);
+      storage = 'file';
+      loadData();
+    }
+  } else {
+    loadData();
+  }
+  applyEnvLlm();
   console.log(`[store] 内容加载完成：${store.questions.length} 道题 / ${store.kb.length} 篇知识 / ${store.roles.length} 个岗位包 / ${store.personas.length} 种人格`);
+}
+
+export function storageMode() {
+  return storage;
 }
 
 export function allKb() {

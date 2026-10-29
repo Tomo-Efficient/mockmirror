@@ -690,7 +690,7 @@ flowchart TD
 
 ## 9. 数据模型
 
-MVP 使用服务端 JSON 文件（`data/store.json`）持久化，单机单用户优先；前端不落 localStorage（仅保留当前表单与播放状态）。字段按未来 SQLite/Postgres 迁移设计。所有实体带 `createdAt`、`updatedAt`；删除采用物理删除 + 二次确认，软删除字段预留给服务端版本。
+MVP 默认使用服务端 JSON 文件（`data/store.json`），配置 `DATABASE_URL` 后切换到 Neon Postgres 的 `mockmirror_state` 单行 JSONB，单机/单实例优先；前端不落 localStorage（仅保留当前表单与播放状态）。字段按未来按实体拆表迁移设计。所有实体带 `createdAt`、`updatedAt`；删除采用物理删除 + 二次确认，软删除字段预留给服务端版本。
 
 ### 9.1 用户与输入
 
@@ -951,7 +951,7 @@ Prompt 规则：
 - 本地规则引擎为启发式评分，语义理解有限；报告中已明确标注“规则评分”。
 - 扫描版 PDF 无文字层，需改用 DOCX 或粘贴文本；当前不做 OCR。
 - 语音输入依赖浏览器 `SpeechRecognition`（Chrome/Edge），Safari 不支持。
-- 单进程 JSON 存储无并发锁，不适合公网多用户；多标签同时写以后写覆盖先写。
+- 持久化层为单行 JSON 文档（文件或 Neon JSONB），没有按实体加锁；多实例并发写会以后写覆盖先写，不适合多用户并发编辑。
 - 检索为 BM25，不含向量语义召回；行业新词可能漏检。
 - 逐题 Agent 轨迹的 JSON 导出、筛选为 V1.1 规划，当前提供实时时间线。
 
