@@ -690,7 +690,7 @@ flowchart TD
 
 ## 9. 数据模型
 
-MVP 默认使用服务端 JSON 文件（`data/store.json`），配置 `DATABASE_URL` 后切换到 Neon Postgres 的 `mockmirror_state` 单行 JSONB，单机/单实例优先；前端不落 localStorage（仅保留当前表单与播放状态）。字段按未来按实体拆表迁移设计。所有实体带 `createdAt`、`updatedAt`；删除采用物理删除 + 二次确认，软删除字段预留给服务端版本。
+MVP 默认使用服务端 JSON 文件（`data/store.json`），配置 `DATABASE_URL` 后切换到 Neon Postgres 的 `mockmirror_user_state` 按用户单行 JSONB，单机/单实例优先；前端不落 localStorage（仅保留当前表单与播放状态）。字段按未来按实体拆表迁移设计。所有实体带 `createdAt`、`updatedAt`；删除采用物理删除 + 二次确认，软删除字段预留给服务端版本。
 
 ### 9.1 用户与输入
 

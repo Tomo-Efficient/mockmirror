@@ -130,7 +130,7 @@ Node HTTP API ── 状态机（parse → match → plan → ask → evaluate �
    │                 ├── 本地规则引擎（零 Key 可用）
    │                 └── LLM（可选，流式）
    ▼
-data/store.json 或 Neon mockmirror_state（简历 / 会话 / 题库 / 设置）
+data/store.json 或 Neon mockmirror_user_state（每个用户的简历 / 会话 / 题库 / 设置）
 ```
 
 ### 账号与多用户
@@ -151,7 +151,7 @@ data/store.json 或 Neon mockmirror_state（简历 / 会话 / 题库 / 设置）
 DATABASE_URL=postgresql://... npm start
 ```
 
-- 启动时自动创建 `mockmirror_state` 表（单行 JSONB，保存简历 / 会话 / 题库 / 自定义知识库 / 设置）。
+- 启动时自动创建 `mockmirror_user_state` 表（每个用户一行 JSONB，保存简历 / 会话 / 题库 / 自定义知识库 / 设置）；首个用户会迁移旧的 `mockmirror_state`。
 - 重启后数据保留；没有 `DATABASE_URL` 时自动回退到本地文件。
 - `/api/health` 会返回 `storage: "neon"` 或 `storage: "file"`，以及 `auth: true/false`。
 - Render 上在 **Environment** 添加 `DATABASE_URL`，重新部署后即可持久化。
