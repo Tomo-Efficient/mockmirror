@@ -9,6 +9,8 @@ services:
     envVars:
       - key: NODE_VERSION
         value: 24.12.0
+      - key: HOST
+        value: 0.0.0.0
       - key: LLM_BASE_URL
         value: https://api.deepseek.com/v1
       - key: LLM_MODEL

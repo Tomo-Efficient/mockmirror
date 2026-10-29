@@ -21,7 +21,7 @@ function loadEnv() {
 loadEnv();
 
 export const PORT = Number(process.env.PORT || 4318);
-export const HOST = process.env.HOST || '127.0.0.1';
+export const HOST = process.env.HOST || (process.env.RENDER ? '0.0.0.0' : '127.0.0.1');
 
 export const ENV_LLM = {
   baseUrl: process.env.LLM_BASE_URL || '',
