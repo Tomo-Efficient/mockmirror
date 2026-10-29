@@ -1,8 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { neon } from '@neondatabase/serverless';
-import { CONTENT_DIR, DATA_DIR, DATA_FILE, ENV_LLM, DATABASE_URL } from './config.js';
+import { AsyncLocalStorage } from 'node:async_hooks';
+import { CONTENT_DIR, DATA_DIR, DATA_FILE, ENV_LLM } from './config.js';
+import { sql as db, dbEnabled } from './db.js';
 
 const EMPTY = () => ({
   personas: [],
@@ -28,11 +29,33 @@ const EMPTY = () => ({
   }
 });
 
-export const store = EMPTY();
-
-let sql = null;
-let storage = 'file';
+const CONTENT_KEYS = new Set(['personas', 'roles', 'questions', 'kb']);
+const content = { personas: [], roles: [], questions: [], kb: [] };
+const guestState = EMPTY();
+const als = new AsyncLocalStorage();
+const userStates = new Map();
+let currentState = guestState;
+let storage = dbEnabled ? 'neon' : 'file';
+let saveTimer = null;
 let writeChain = Promise.resolve();
+const pending = new Map();
+
+const activeState = () => als.getStore()?.state || currentState;
+
+export const store = new Proxy({}, {
+  get(_, prop) {
+    if (CONTENT_KEYS.has(prop)) return content[prop];
+    return activeState()[prop];
+  },
+  set(_, prop, value) {
+    if (CONTENT_KEYS.has(prop)) content[prop] = value;
+    else activeState()[prop] = value;
+    return true;
+  },
+  has(_, prop) {
+    return CONTENT_KEYS.has(prop) || prop in activeState();
+  }
+});
 
 const readJson = (file, fallback) => {
   try {
@@ -110,67 +133,49 @@ function loadContent() {
     }));
 }
 
+function applyData(target, saved) {
+  if (!saved || typeof saved !== 'object') return;
+  if (saved.settings) {
+    target.settings = {
+      ...target.settings,
+      ...saved.settings,
+      llm: { ...target.settings.llm, ...(saved.settings.llm || {}) },
+      profile: { ...target.settings.profile, ...(saved.settings.profile || {}) },
+      preferences: { ...target.settings.preferences, ...(saved.settings.preferences || {}) }
+    };
+  }
+  if (Array.isArray(saved.bank)) target.bank = saved.bank;
+  if (Array.isArray(saved.sessions)) target.sessions = saved.sessions;
+  if (saved.resumes && typeof saved.resumes === 'object') target.resumes = saved.resumes;
+  if (Array.isArray(saved.customKb)) target.customKb = saved.customKb;
+}
+
+function applyEnvLlm(target) {
+  if (!target.settings.llm.apiKey && ENV_LLM.apiKey) {
+    target.settings.llm.apiKey = ENV_LLM.apiKey;
+    target.settings.llm.enabled = true;
+  }
+}
+
 function loadData() {
   fs.mkdirSync(DATA_DIR, { recursive: true, mode: 0o700 });
   if (!fs.existsSync(DATA_FILE)) return;
   try {
-    const saved = readJson(DATA_FILE);
-    if (saved.settings) {
-      store.settings = {
-        ...store.settings,
-        ...saved.settings,
-        llm: { ...store.settings.llm, ...(saved.settings.llm || {}) },
-        profile: { ...store.settings.profile, ...(saved.settings.profile || {}) },
-        preferences: { ...store.settings.preferences, ...(saved.settings.preferences || {}) }
-      };
-    }
-    if (Array.isArray(saved.bank)) store.bank = saved.bank;
-    if (Array.isArray(saved.sessions)) store.sessions = saved.sessions;
-    if (saved.resumes && typeof saved.resumes === 'object') store.resumes = saved.resumes;
-    if (Array.isArray(saved.customKb)) store.customKb = saved.customKb;
+    applyData(guestState, readJson(DATA_FILE));
   } catch (err) {
     console.warn(`[store] 数据文件损坏，已备份并重建: ${err.message}`);
     try { fs.copyFileSync(DATA_FILE, `${DATA_FILE}.broken-${Date.now()}`); } catch {}
   }
-  if (!store.settings.llm.apiKey && ENV_LLM.apiKey) {
-    store.settings.llm.apiKey = ENV_LLM.apiKey;
-    store.settings.llm.enabled = true;
-  }
+  applyEnvLlm(guestState);
 }
 
-let saveTimer = null;
-
-function applyData(saved) {
-  if (!saved || typeof saved !== 'object') return;
-  if (saved.settings) {
-    store.settings = {
-      ...store.settings,
-      ...saved.settings,
-      llm: { ...store.settings.llm, ...(saved.settings.llm || {}) },
-      profile: { ...store.settings.profile, ...(saved.settings.profile || {}) },
-      preferences: { ...store.settings.preferences, ...(saved.settings.preferences || {}) }
-    };
-  }
-  if (Array.isArray(saved.bank)) store.bank = saved.bank;
-  if (Array.isArray(saved.sessions)) store.sessions = saved.sessions;
-  if (saved.resumes && typeof saved.resumes === 'object') store.resumes = saved.resumes;
-  if (Array.isArray(saved.customKb)) store.customKb = saved.customKb;
-}
-
-function applyEnvLlm() {
-  if (!store.settings.llm.apiKey && ENV_LLM.apiKey) {
-    store.settings.llm.apiKey = ENV_LLM.apiKey;
-    store.settings.llm.enabled = true;
-  }
-}
-
-function payload() {
+function payloadOf(state) {
   return {
-    settings: store.settings,
-    bank: store.bank,
-    sessions: store.sessions,
-    resumes: store.resumes,
-    customKb: store.customKb
+    settings: state.settings,
+    bank: state.bank,
+    sessions: state.sessions,
+    resumes: state.resumes,
+    customKb: state.customKb
   };
 }
 
@@ -185,77 +190,106 @@ function writeFile(data) {
   }
 }
 
-async function persistState() {
-  const data = payload();
-  if (storage === 'neon' && sql) {
+async function persistState(state, userId) {
+  const data = payloadOf(state);
+  if (userId && db) {
     try {
       const json = JSON.stringify(data);
-      await sql`INSERT INTO mockmirror_state (id, data, updated_at)
-                VALUES (1, ${json}::jsonb, now())
-                ON CONFLICT (id) DO UPDATE
-                SET data = EXCLUDED.data, updated_at = now()`;
+      await db`INSERT INTO mockmirror_user_state (user_id, data, updated_at)
+               VALUES (${userId}, ${json}::jsonb, now())
+               ON CONFLICT (user_id) DO UPDATE
+               SET data = EXCLUDED.data, updated_at = now()`;
       return;
     } catch (err) {
-      console.error('[store] Neon 保存失败，降级文件:', err.message);
-      storage = 'file';
+      console.error('[store] 用户数据写入 Neon 失败:', err.message);
+      return;
     }
   }
   writeFile(data);
 }
 
-function enqueuePersist() {
-  writeChain = writeChain.then(persistState, persistState);
+function enqueuePersist(state, userId) {
+  writeChain = writeChain.then(() => persistState(state, userId), () => persistState(state, userId));
   return writeChain;
 }
 
 export function save() {
-  clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => {
-    saveTimer = null;
-    void enqueuePersist();
+  const ctx = als.getStore();
+  const state = ctx?.state || currentState;
+  const userId = ctx?.userId || null;
+  const key = userId || 'guest';
+  const prev = pending.get(key);
+  if (prev) clearTimeout(prev.timer);
+  const timer = setTimeout(() => {
+    pending.delete(key);
+    void enqueuePersist(state, userId);
   }, 80);
-  saveTimer.unref?.();
+  timer.unref?.();
+  pending.set(key, { timer, state, userId });
 }
 
 export async function flushStore() {
-  if (saveTimer) {
-    clearTimeout(saveTimer);
-    saveTimer = null;
+  const items = [...pending.values()];
+  pending.clear();
+  for (const item of items) {
+    clearTimeout(item.timer);
+    enqueuePersist(item.state, item.userId);
   }
-  await enqueuePersist();
+  await writeChain;
 }
 
 export async function initStore() {
   loadContent();
-  if (DATABASE_URL) {
-    try {
-      sql = neon(DATABASE_URL);
-      await sql`CREATE TABLE IF NOT EXISTS mockmirror_state (
-        id smallint PRIMARY KEY,
-        data jsonb NOT NULL,
-        updated_at timestamptz NOT NULL DEFAULT now(),
-        CHECK (id = 1)
-      )`;
-      const rows = await sql`SELECT data FROM mockmirror_state WHERE id = 1`;
-      storage = 'neon';
-      if (rows[0]?.data) {
-        applyData(typeof rows[0].data === 'string' ? JSON.parse(rows[0].data) : rows[0].data);
-        console.log('[store] Neon 持久化已连接');
-      } else {
-        loadData();
-        await enqueuePersist();
-        console.log('[store] Neon 持久化已初始化');
-      }
-    } catch (err) {
-      console.warn(`[store] Neon 连接失败，降级文件: ${err.message}`);
-      storage = 'file';
-      loadData();
-    }
+  if (dbEnabled) {
+    storage = 'neon';
+    currentState = guestState;
   } else {
+    storage = 'file';
     loadData();
   }
-  applyEnvLlm();
   console.log(`[store] 内容加载完成：${store.questions.length} 道题 / ${store.kb.length} 篇知识 / ${store.roles.length} 个岗位包 / ${store.personas.length} 种人格`);
+}
+
+function createUserState(withEnvKey = false) {
+  const state = EMPTY();
+  if (!withEnvKey) {
+    state.settings.llm.apiKey = '';
+    state.settings.llm.enabled = false;
+  }
+  return state;
+}
+
+export async function initUserState(userId, { withEnvKey = false, legacy = false } = {}) {
+  if (userStates.has(userId)) return userStates.get(userId);
+  if (!db) throw new Error('数据库未配置');
+  const rows = await db`SELECT data FROM mockmirror_user_state WHERE user_id = ${userId}`;
+  let state;
+  if (rows[0]?.data) {
+    state = createUserState(false);
+    applyData(state, typeof rows[0].data === 'string' ? JSON.parse(rows[0].data) : rows[0].data);
+  } else {
+    state = createUserState(withEnvKey);
+    if (legacy) {
+      try {
+        const old = await db`SELECT data FROM mockmirror_state WHERE id = 1`;
+        if (old[0]?.data) {
+          applyData(state, typeof old[0].data === 'string' ? JSON.parse(old[0].data) : old[0].data);
+        }
+      } catch { /* 旧表不存在时忽略 */ }
+    }
+    if (withEnvKey) applyEnvLlm(state);
+    const json = JSON.stringify(payloadOf(state));
+    await db`INSERT INTO mockmirror_user_state (user_id, data, updated_at)
+             VALUES (${userId}, ${json}::jsonb, now())
+             ON CONFLICT (user_id) DO NOTHING`;
+  }
+  userStates.set(userId, state);
+  return state;
+}
+
+export async function runAsUser(user, fn) {
+  const state = await initUserState(user.id);
+  return als.run({ state, userId: user.id }, fn);
 }
 
 export function storageMode() {

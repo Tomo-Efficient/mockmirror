@@ -133,6 +133,16 @@ Node HTTP API ── 状态机（parse → match → plan → ask → evaluate �
 data/store.json 或 Neon mockmirror_state（简历 / 会话 / 题库 / 设置）
 ```
 
+### 账号与多用户
+
+配置 `DATABASE_URL` 后，应用会启用账号系统：
+
+- `/api/auth/register`、`/api/auth/login`、`/api/auth/logout`
+- 密码使用 scrypt + 随机盐哈希；登录态是 HttpOnly Cookie，服务端只存 token hash
+- 每个用户的数据写入 `mockmirror_user_state(user_id, data)`，简历、面试记录、题库、设置完全隔离
+- 第一个注册的用户会继承服务端 `LLM_API_KEY` 作为默认模型配置；后续用户需要自己在设置里填写 Key
+- 没有 `DATABASE_URL` 时保持本地免登录模式，继续使用 `data/store.json`
+
 ### 持久化
 
 默认使用 `data/store.json`，适合本地单机。配置 `DATABASE_URL` 后自动切换到 Neon：
@@ -143,7 +153,7 @@ DATABASE_URL=postgresql://... npm start
 
 - 启动时自动创建 `mockmirror_state` 表（单行 JSONB，保存简历 / 会话 / 题库 / 自定义知识库 / 设置）。
 - 重启后数据保留；没有 `DATABASE_URL` 时自动回退到本地文件。
-- `/api/health` 会返回 `storage: "neon"` 或 `storage: "file"`。
+- `/api/health` 会返回 `storage: "neon"` 或 `storage: "file"`，以及 `auth: true/false`。
 - Render 上在 **Environment** 添加 `DATABASE_URL`，重新部署后即可持久化。
 - 需要多用户、并发写入时，下一步应按实体拆表，而不是继续单行 JSONB。
 
@@ -209,7 +219,7 @@ ai-interview-coach/
 - 本地规则引擎是启发式评分，能保证流程和解释性，但语义理解有限；想要更自然的追问请配置模型。
 - 扫描版 PDF 没有文字层，无法解析，请改用 DOCX 或粘贴文本。
 - 语音输入依赖浏览器 `SpeechRecognition`（Chrome / Edge），Safari 暂不支持。
-- 单机单用户设计，没有并发写入锁；不适合直接暴露到公网多用户使用。
+- 默认单机单用户；配置 `DATABASE_URL` 后启用账号系统与按用户隔离，但仍是单实例 + 单行 JSON 状态，不适合高并发多实例写入。
 
 ## Roadmap
 

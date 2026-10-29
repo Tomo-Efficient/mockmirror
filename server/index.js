@@ -7,7 +7,7 @@ import {
   initStore, store, allKb, addResume, getResume,
   getSession, deleteSession, listSessions, stats, publicSettings, updateSettings,
   addBankItem, updateBankItem, deleteBankItem, addCustomKb, deleteCustomKb, save,
-  flushStore, storageMode
+  flushStore, storageMode, runAsUser
 } from './store.js';
 import { parseUpload } from './parsers/index.js';
 import { parseResume } from './profile.js';
@@ -16,8 +16,13 @@ import { search, invalidateIndex } from './rag.js';
 import { testConnection, isLLMEnabled } from './llm.js';
 import { createSession, streamTurn, getHint, skipQuestion, finishSession, publicSession } from './agent/conversation.js';
 import { NODE_META } from './agent/graph.js';
+import {
+  initAuth, authEnabled, register, login, createSession as createAuthSession,
+  deleteSession as deleteAuthSession, currentUser, sessionToken, setSessionCookie, clearSessionCookie
+} from './auth.js';
 
 await initStore();
+await initAuth();
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -116,7 +121,7 @@ function sseSend(res, event, data) {
   res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
 }
 
-async function route(req, res, url) {
+async function appRoute(req, res, url) {
   const { pathname } = url;
   const method = req.method;
 
@@ -126,6 +131,7 @@ async function route(req, res, url) {
 
   if (pathname === '/api/bootstrap' && method === 'GET') {
     return json(res, 200, {
+      user: req.user || null,
       personas: store.personas.length ? store.personas : undefined,
       roles: store.roles.map((r) => ({ id: r.id, name: r.name, aliases: r.aliases, keywords: r.keywords, summary: r.summary, competencies: r.competencies, focusTopics: r.focusTopics })),
       categories: [...new Set(allKb().map((d) => d.category))],
@@ -326,6 +332,85 @@ async function route(req, res, url) {
   }
 
   throw new HttpError(404, '接口不存在');
+}
+
+const authHits = new Map();
+function clientIp(req) {
+  return String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '')
+    .split(',')[0].trim();
+}
+function authRateLimited(req, max = 10, windowMs = 10 * 60 * 1000) {
+  const key = clientIp(req);
+  const now = Date.now();
+  const arr = (authHits.get(key) || []).filter((t) => now - t < windowMs);
+  if (arr.length >= max) return true;
+  arr.push(now);
+  authHits.set(key, arr);
+  if (authHits.size > 5000) authHits.clear();
+  return false;
+}
+
+async function authRoute(req, res, url) {
+  const { pathname } = url;
+  const method = req.method;
+
+  if (pathname === '/api/auth/me' && method === 'GET') {
+    if (!authEnabled()) return json(res, 200, { auth: false, user: null });
+    const user = await currentUser(req);
+    return json(res, 200, { auth: true, user: user || null });
+  }
+
+  if (!authEnabled()) {
+    return json(res, 503, { error: '当前为本地免登录模式，未启用账号系统' });
+  }
+
+  if (pathname === '/api/auth/register' && method === 'POST') {
+    if (authRateLimited(req)) throw new HttpError(429, '尝试次数过多，请稍后再试');
+    const body = await readJson(req);
+    const user = await register(body);
+    const { token } = await createAuthSession(user.id);
+    setSessionCookie(res, token);
+    return json(res, 200, { user });
+  }
+
+  if (pathname === '/api/auth/login' && method === 'POST') {
+    if (authRateLimited(req)) throw new HttpError(429, '尝试次数过多，请稍后再试');
+    const body = await readJson(req);
+    const user = await login(body);
+    const { token } = await createAuthSession(user.id);
+    setSessionCookie(res, token);
+    return json(res, 200, { user });
+  }
+
+  if (pathname === '/api/auth/logout' && method === 'POST') {
+    await deleteAuthSession(sessionToken(req));
+    clearSessionCookie(res);
+    return json(res, 200, { ok: true });
+  }
+
+  throw new HttpError(404, '接口不存在');
+}
+
+async function route(req, res, url) {
+  const { pathname } = url;
+  if (pathname === '/api/health') {
+    return json(res, 200, {
+      ok: true,
+      version: '1.1.0',
+      llm: isLLMEnabled(),
+      storage: storageMode(),
+      auth: authEnabled(),
+      time: new Date().toISOString()
+    });
+  }
+  if (pathname.startsWith('/api/auth/')) return authRoute(req, res, url);
+  if (pathname.startsWith('/api/') && authEnabled()) {
+    const user = await currentUser(req);
+    if (!user) return json(res, 401, { error: '请先登录', code: 'AUTH_REQUIRED' });
+    req.user = user;
+    return runAsUser(user, () => appRoute(req, res, url));
+  }
+  return appRoute(req, res, url);
 }
 
 const server = http.createServer(async (req, res) => {

@@ -32,7 +32,7 @@
 - 启动时 `initStore()` 加载内容与用户数据；内容文件每次启动重新读取，便于改题库不改代码。
 - 配置 `DATABASE_URL` 时，动态状态写入 Neon `mockmirror_state`（单行 JSONB）；没有配置时回退到 `data/store.json`，写操作使用 `tmp → rename` 原子替换，避免进程中断写坏 JSON。
 - 每次写操作合并为当前状态快照，80ms 防抖后落库；`SIGTERM` 时会 flush。
-- 没有登录态：单用户本地工具，所有数据属于当前机器。
+- 配置 `DATABASE_URL` 时启用账号系统：密码 scrypt 哈希、HttpOnly Cookie、会话表；每个用户的数据写入 `mockmirror_user_state`，彼此隔离。没有数据库时保持本地免登录模式。
 
 ## 3. 请求生命周期
 

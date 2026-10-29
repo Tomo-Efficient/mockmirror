@@ -5,7 +5,13 @@ export async function api(path, { method = 'GET', body } = {}) {
     body: body ? JSON.stringify(body) : undefined
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || `请求失败（${res.status}）`);
+  if (!res.ok) {
+    const err = new Error(data.error || `请求失败（${res.status}）`);
+    err.status = res.status;
+    err.code = data.code;
+    if (res.status === 401 && !path.startsWith('/api/auth/')) location.href = '/';
+    throw err;
+  }
   return data;
 }
 
