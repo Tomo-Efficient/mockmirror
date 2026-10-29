@@ -24,7 +24,7 @@ export async function renderInterview(params, root) {
           <span class="avatar" style="background:${persona.color}22;border-color:${persona.color}55;color:${persona.color}">${persona.id === 'peer' ? '同' : persona.id === 'senior' ? '资' : '经'}</span>
           <div class="ch-info">
             <h2>${esc(persona.name)} <span class="badge">${esc(session.jd?.analysis?.roleName || '模拟面试')}</span></h2>
-            <p>${esc(persona.subtitle || '')} · ${esc(session.profile?.name || '')}</p>
+            <p>${esc(session.profile?.name || '候选人')}</p>
           </div>
           <div class="progress-mini">
             <div class="lbl"><span>进度</span><span id="progText">${session.progress.reached ?? session.progress.answered}/${session.progress.total}</span></div>
@@ -81,16 +81,14 @@ export async function renderInterview(params, root) {
         <button class="btn btn-ghost btn-sm" id="mReport">${icon('chart', 13)} 结束</button>
       </div>
       <div class="composer">
-        <textarea id="answerBox" placeholder="用你自己的话回答，越具体越好。Enter 发送，Shift + Enter 换行"></textarea>
+        <textarea id="answerBox" placeholder="输入回答，Enter 发送"></textarea>
         <div class="composer-foot">
           <button class="icon-btn mic-btn" id="micBtn" title="语音输入">${icon('mic', 17)}</button>
           <span class="count" id="charCount">0 字</span>
           <span class="spacer"></span>
-          <span class="small faint" style="font-size:10px">建议 90–180 秒</span>
           <button class="send-btn" id="sendBtn" disabled aria-label="发送">${icon('send', 16)}</button>
         </div>
-      </div>
-      <div class="composer-hint"><span>${icon('shield', 11)} 回答仅保存在本地</span><span>${session.llm ? '模型已连接' : '本地规则引擎'}</span></div>`;
+      </div>`;
     const box = chatFoot.querySelector('#answerBox');
     const send = chatFoot.querySelector('#sendBtn');
     const count = chatFoot.querySelector('#charCount');
@@ -119,35 +117,31 @@ export async function renderInterview(params, root) {
       <div class="rail-card">
         <h4>当前问题 <span class="badge">${p ? esc(p.question.stage) : '已完成'}</span></h4>
         ${p ? `<div class="q-text">${esc(p.question.text)}</div>
-          <div class="q-intent">${esc(p.question.intent || '考察你的真实经历与判断过程')}</div>
-          <div style="margin-top:12px"><button class="btn btn-ghost btn-sm btn-block" id="pointsBtn">${icon('eye', 14)} 查看参考要点</button></div>
-          <ul class="points" id="pointsList" hidden>${(p.question.answerPoints || []).map((x) => `<li>${esc(x)}</li>`).join('')}</ul>`
-        : `<div class="rail-empty">本场问题已问完，去生成报告吧。</div>`}
+          <div class="rail-points"><button class="btn btn-quiet btn-sm" id="pointsBtn">参考要点</button></div>
+          <ul class="points" id="pointsList" hidden>${(p.question.answerPoints || []).map((x) => `<li>${esc(x)}</li>`).join('')}</ul>
+          <div class="rail-actions">
+            <button class="btn btn-ghost btn-sm" id="hintBtn">${icon('lightbulb', 13)} 提示</button>
+            <button class="btn btn-ghost btn-sm" id="skipBtn">${icon('skip', 13)} 换题</button>
+            <button class="btn btn-ghost btn-sm" id="reportBtn">${icon('chart', 13)} 结束</button>
+          </div>`
+        : `<div class="rail-empty">本场问题已问完。</div>
+          <div class="rail-actions"><button class="btn btn-primary btn-sm" id="reportBtn">${icon('chart', 13)} 生成报告</button></div>`}
       </div>
       <div class="rail-card">
-        <h4>本场表现 <span class="mono" style="color:var(--ink);font-size:12px">${avg || '—'}</span></h4>
+        <h4>本场表现 ${avg ? `<span class="mono" style="color:var(--ink);font-size:12px">${avg}</span>` : ''}</h4>
         ${evalForBars ? `<div class="score-mini">${miniBars(evalForBars.scores)}</div>
-          <div class="small faint" style="margin-top:10px;line-height:1.6">最近一题：${esc(evalForBars.verdict)} · ${esc((evalForBars.strengths || [])[0] || '继续补齐证据')}</div>`
-        : `<div class="rail-empty">完成第一题后，这里会出现五维评分。</div>`}
+          <div class="small faint" style="margin-top:8px;line-height:1.5">最近一题：${esc(evalForBars.verdict)}</div>`
+        : `<div class="rail-empty">完成第一题后显示评分。</div>`}
       </div>
-      <div class="rail-card">
-        <h4>Agent 轨迹 <span class="faint" style="font-family:var(--sans);letter-spacing:0;text-transform:none">实时</span></h4>
+      <details class="rail-card rail-details">
+        <summary><span>查看依据</span><span class="faint">Agent 轨迹</span></summary>
         <div class="trace">${(session.trace || []).slice(-7).reverse().map((t) => `<div class="trace-item ${t.tone || 'ok'}"><span class="trace-dot"></span><div class="trace-body"><strong>${esc(t.label)}</strong><span>${esc(t.detail || '')}</span></div></div>`).join('') || '<div class="rail-empty">等待第一步…</div>'}</div>
-      </div>
-      <div class="rail-card">
-        <h4>操作</h4>
-        <div class="rail-actions">
-          <button class="btn btn-ghost btn-sm" id="hintBtn" ${p ? '' : 'disabled'}>${icon('lightbulb', 14)} 给点提示</button>
-          <button class="btn btn-ghost btn-sm" id="skipBtn" ${p ? '' : 'disabled'}>${icon('skip', 14)} 换一题</button>
-          <button class="btn btn-ghost btn-sm" id="reportBtn" style="grid-column:span 2">${icon('chart', 14)} 结束并生成报告</button>
-        </div>
-        <div class="small faint" style="margin-top:10px;line-height:1.6">提示会记录在报告里；换题不扣分，但会标记为未作答。</div>
-      </div>`;
+      </details>`;
     const pointsBtn = rail.querySelector('#pointsBtn');
     if (pointsBtn) pointsBtn.onclick = () => {
       const list = rail.querySelector('#pointsList');
       list.hidden = !list.hidden;
-      pointsBtn.innerHTML = `${icon('eye', 14)} ${list.hidden ? '查看参考要点' : '收起参考要点'}`;
+      pointsBtn.textContent = list.hidden ? '参考要点' : '收起要点';
     };
     const hintBtn = rail.querySelector('#hintBtn');
     if (hintBtn) hintBtn.onclick = async () => {
@@ -286,7 +280,7 @@ export async function renderInterview(params, root) {
       navigate(`/report/${session.id}`);
     } catch (err) {
       toast(err.message, 'error', 5000);
-      if (btn) { btn.disabled = false; btn.innerHTML = `${icon('chart', 14)} 结束并生成报告`; }
+      if (btn) { btn.disabled = false; btn.innerHTML = `${icon('chart', 13)} 结束`; }
     }
   }
 

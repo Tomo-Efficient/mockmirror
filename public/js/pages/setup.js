@@ -10,13 +10,6 @@ const FOCUS = [
   { id: 'pressure', label: '压力面', desc: '质疑数据、压缩资源、连续追问' }
 ];
 
-const sayings = [
-  '面试官只能根据你说出来的内容打分，不会替你补全逻辑。',
-  '每个数字后面都要有口径，否则它只是一个装饰。',
-  '追问不是在为难你，是在确认这件事真的是你做的。',
-  '回答长度不是重点，结论、依据、结果三件事缺一不可。'
-];
-
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -55,7 +48,7 @@ export async function renderSetup(params, root) {
 
   root.innerHTML = `<div class="page">
     <div class="page-head">
-      <div><span class="eyebrow">NEW SESSION</span><h1>准备一场模拟面试</h1><p>三步：上传简历 → 粘贴 JD → 选择面试官。所有数据只保存在你自己的机器上。</p></div>
+      <div><span class="eyebrow">NEW SESSION</span><h1>开始面试</h1><p>上传简历、粘贴 JD、选择面试官。</p></div>
       <a class="btn btn-ghost btn-sm" href="/" data-link>${icon('arrowLeft', 15)} 返回工作台</a>
     </div>
     <div class="steps" id="steps">
@@ -92,10 +85,6 @@ export async function renderSetup(params, root) {
       <div class="s-row"><span>面试官</span><strong>${esc(persona.name)}</strong></div>
       <div class="s-row"><span>题量</span><strong>${s.config.rounds} 题</strong></div>
       <div class="s-row"><span>侧重</span><strong>${FOCUS.find((f) => f.id === s.config.focus)?.label}</strong></div>
-    </div>
-    <div class="card" style="padding:16px;background:var(--surface-2);border-color:var(--line);box-shadow:none">
-      <div style="font-size:10px;color:var(--faint);font-family:var(--mono);letter-spacing:.1em">TIPS</div>
-      <p style="font-size:12px;color:var(--muted);line-height:1.75;margin-top:7px">${sayings[(s.step + s.config.rounds) % sayings.length]}</p>
     </div>`;
   }
 
@@ -156,10 +145,8 @@ export async function renderSetup(params, root) {
             <h4>技能与关键词</h4>
             <div class="kw-row">${(p.skills || []).slice(0, 14).map((k) => `<span class="chip">${esc(k)}</span>`).join('')}</div>
           </div>
-          ${p.highlights?.length ? `<div class="profile-sec"><h4>量化亮点</h4>${p.highlights.slice(0, 3).map((h) => `<p class="small muted" style="margin:5px 0">· ${esc(h.text.slice(0, 80))}</p>`).join('')}</div>` : ''}
         </div>
-        <div class="row-between" style="margin-top:20px">
-          <span class="small faint">画像不对？点“换一份”重新上传，或直接把文字粘贴进来。</span>
+        <div class="row" style="justify-content:flex-end;margin-top:18px">
           <button class="btn btn-primary" id="toStep2">下一步：目标岗位 ${icon('arrowRight', 15)}</button>
         </div>`;
       panel.querySelector('#reupload').onclick = () => { s.profile = null; s.resumeId = null; paint(); };
@@ -167,21 +154,20 @@ export async function renderSetup(params, root) {
       return;
     }
 
-    panel.innerHTML = `<div class="panel-title">上传你的简历</div>
-      <div class="panel-sub">支持 PDF / DOCX / TXT / MD，最大 10MB。扫描版 PDF 请改用 DOCX 或粘贴文本。</div>
+    panel.innerHTML = `<div class="panel-title">上传简历</div>
+      <div class="panel-sub">PDF / DOCX / TXT / MD，最大 10MB。</div>
       <div id="parseState">
         <div class="dz-body">
           <div class="dropzone" id="dropzone" style="margin-top:18px">
             <input type="file" id="fileInput" accept=".pdf,.docx,.txt,.md" hidden>
             <div class="dz-ico">${icon('upload', 22)}</div>
             <h3>拖拽简历到这里，或点击选择文件</h3>
-            <p>文件只在本机解析，不会上传到第三方</p>
-            <div class="dz-formats"><span class="chip">PDF</span><span class="chip">DOCX</span><span class="chip">TXT</span><span class="chip">MD</span></div>
+            <p>简历只对当前账号可见</p>
           </div>
           <div class="or-line">或者</div>
           <div class="field">
-            <label>直接粘贴简历文字 <span class="hint">保留原有分段效果更好</span></label>
-            <textarea class="textarea" id="pasteBox" placeholder="把简历内容粘贴到这里，例如：&#10;教育背景&#10;香港城市大学 统计学 硕士 2024.09 — 2026.06&#10;实习经历&#10;某公司 AI 产品经理 2026.01 — 2026.05&#10;..."></textarea>
+            <label>或直接粘贴文字</label>
+            <textarea class="textarea" id="pasteBox" placeholder="粘贴简历文字，保留分段即可。"></textarea>
           </div>
           <div class="row" style="margin-top:12px">
             <button class="btn btn-primary" id="parseText">${icon('sparkles', 15)} 解析粘贴内容</button>
@@ -223,10 +209,10 @@ export async function renderSetup(params, root) {
 
   function step2() {
     panel.innerHTML = `<div class="panel-title">粘贴目标岗位 JD</div>
-      <div class="panel-sub">面镜会识别岗位类型、关键词覆盖与能力缺口，并据此调整题单。越完整的 JD，匹配越准。</div>
+      <div class="panel-sub">建议包含职责与任职要求。</div>
       <div class="field" style="margin-top:18px">
-        <label>职位描述 <span class="hint">建议包含职责与任职要求</span></label>
-        <textarea class="textarea" id="jdBox" style="min-height:230px" placeholder="粘贴 JD，例如：&#10;岗位职责&#10;1. 负责大模型应用产品的规划与落地；&#10;2. 设计 RAG / Agent 方案，搭建评测体系……&#10;任职要求&#10;1. 1-3 年产品经验，熟悉 LLM、Prompt 工程……">${esc(s.jdText)}</textarea>
+        <label>职位描述</label>
+        <textarea class="textarea" id="jdBox" style="min-height:210px" placeholder="粘贴目标岗位 JD">${esc(s.jdText)}</textarea>
       </div>
       <div class="row" style="margin-top:12px">
         <button class="btn btn-primary" id="analyzeBtn">${icon('target', 15)} 分析岗位匹配</button>
@@ -275,14 +261,13 @@ export async function renderSetup(params, root) {
         <div style="flex:1;min-width:0"><h3>${esc(a.roleName)} · ${esc(a.level)}</h3><p>${esc(a.title)} · ${esc(a.seniority)} · 关键词覆盖 ${a.coverage}%</p></div>
       </div>
       <div class="kw-row">${(a.matched || []).map((k) => `<span class="chip green">${icon('check', 11)} ${esc(k)}</span>`).join('')}${(a.missing || []).map((k) => `<span class="chip amber">${icon('alert', 11)} ${esc(k)}</span>`).join('')}</div>
-      ${a.suggestions?.[0] ? `<div class="jd-suggest">${icon('lightbulb', 15)}<div>${esc(a.suggestions[0])}</div></div>` : ''}
     </div>`;
   }
 
   function step3() {
     const persona = personaMeta(state.personas, s.config.persona);
     panel.innerHTML = `<div class="panel-title">设置这场面试</div>
-      <div class="panel-sub">人格决定提问的锋利程度，题量决定这场的时长。建议第一次先跑 6 题。</div>
+      <div class="panel-sub">人格决定提问风格，题量决定时长。</div>
       <div class="field" style="margin-top:20px">
         <label>面试官人格</label>
         <div class="persona-pick" id="personaPick">
@@ -293,15 +278,14 @@ export async function renderSetup(params, root) {
         </div>
       </div>
       <div class="field" style="margin-top:20px">
-        <label>题量 <span class="hint">每题最多 2 次追问，不计入题量</span></label>
+        <label>题量</label>
         <div class="range-row"><input type="range" id="rounds" min="4" max="10" step="1" value="${s.config.rounds}"><span class="range-val" id="roundsVal">${s.config.rounds}</span><span class="small faint">题</span></div>
       </div>
       <div class="field" style="margin-top:20px">
         <label>本场侧重</label>
         <div class="segmented" id="focusSeg">${FOCUS.map((f) => `<button data-f="${f.id}" class="${f.id === s.config.focus ? 'active' : ''}" title="${esc(f.desc)}">${esc(f.label)}</button>`).join('')}</div>
       </div>
-      <div class="notice info" style="margin-top:20px">${icon('shield', 16)}<div>本场会以 ${esc(persona.name)} 的身份提问，共 ${s.config.rounds} 题左右。中途可以要求提示或跳过，不扣分但会记录在报告里。</div></div>
-      <div class="row-between" style="margin-top:22px">
+      <div class="row-between" style="margin-top:24px">
         <button class="btn btn-quiet" id="back2">${icon('arrowLeft', 15)} 上一步</button>
         <button class="btn btn-primary btn-lg" id="startBtn">${icon('play', 16)} 开始面试</button>
       </div>`;
